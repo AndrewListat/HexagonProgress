@@ -1,7 +1,7 @@
 /*!
   Hexagon Progress jQuery Plugin
   @name hexagon-progress.js
-  @version 1.0.0
+  @version 1.1.0
   @description Draw animated hexagon progress bars
   @category jQuery plugin
   @author Max Lawrence 
@@ -11,19 +11,20 @@
 (function($) {
     'use strict';
     
-    function HexagonControl(config) {
+    function HexagonProgress(config) {
         this.init(config);
     }
     
-    HexagonControl.prototype = {
+    HexagonProgress.prototype = {
         //=============================================
         // Public Section
         //=============================================
         
         /**
-         * Size of the hexagon / canvas in pixels
+         * Size of the hexagon / canvas in pixels. 
+         * Number or string ('parent' - minimum width or height of the parent element)
          * @public
-         * @type {number}
+         * @type {number|string}
          */
         size: 100.0,
         
@@ -54,7 +55,23 @@
          * @public
          * @type {string}
          */
-        lineCap: 'butt',
+        lineCap: 'round',
+        
+        /**
+         * On/off clipping mask. It works if background is not null.
+         * @public
+         * @type {boolean}
+         */
+        clip: false,
+        
+        /**
+         * Background. You may set it to:
+         *   - image:
+         *     - { image: 'http://i.imgur.com/HmMu67L.jpg' }
+         *     - { image: imageObject }
+         * @public
+         */
+        backgroundImage: null,
         
         /**
          * Color of the back border. Only a color.
@@ -96,13 +113,14 @@
          */
         animationStartValue: 0.0,
         
+        
         //=============================================
         // Protected Section
         //=============================================
         /**
          * @protected
          */
-        constructor: HexagonControl,
+        constructor: HexagonProgress,
         
         /**
          * Container element. Should be passed into constructor config
@@ -139,6 +157,7 @@
          */
         lineFill: null,
         
+        
         /**
          * Last rendered value
          * @protected
@@ -173,7 +192,6 @@
          */
         init: function(config) {
             $.extend(this, config);
-            this.outerRadius = this.size / 2;
             this.initControl();
             this.initFill();
             this.draw();
@@ -184,9 +202,17 @@
          */
         initControl: function() {
             var canvas = this.canvas = this.canvas || $('<canvas>').prependTo(this.el)[0];
+            
+            if(this.size == 'parent') {
+                var h = $(canvas).parent().outerHeight(),
+                    w = $(canvas).parent().outerWidth();
+                this.size = (h > w ? w : h);
+            }
+            
             canvas.width = this.size;
             canvas.height = this.size;
             this.ctx = canvas.getContext('2d');
+            this.outerRadius = this.size / 2;
         },
         
         /**
@@ -347,8 +373,8 @@
                     bg.width = control.size;
                     bg.height = control.size;
                     bg.getContext('2d').drawImage(img, 0, 0, size, size);
-                    control.arcFill = control.ctx.createPattern(bg, 'no-repeat');
-                    control.drawFrame(control.lastFrameValue);
+                    control.lineFill = control.ctx.createPattern(bg, 'no-repeat');
+                    control.drawFrame(control.lastValue);
                 }
 
                 if (img.complete) {
@@ -408,8 +434,87 @@
             this.ctx.clearRect(0, 0, this.size, this.size);
             this.initCoordBack();
             this.initCoordFront(value);
-            this.drawBack();
-            this.drawFront();
+            
+            if(this.backgroundImage) {
+                this.drawBackground();
+            } else {
+                this.drawBack();
+                this.drawFront();
+            }
+        },
+        
+        /**
+         * @protected
+         */
+        makeClipMask: function() {
+            var ctx = this.ctx,
+                 w = this.getLineWidth(),
+                 outerRadius = this.outerRadius,
+                 offset = w/2;
+                 
+            this.outerRadius -= offset;
+            this.initCoordBack();
+                    
+            ctx.save();
+
+            ctx.fillStyle = '#fff'; //color doesn't matter, but we want full opacity
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.moveTo(this.coordBack[0].x + offset, this.coordBack[0].y + offset);
+            for(var i = 0; i < this.coordBack.length; i++) {
+                ctx.lineTo(this.coordBack[i].x + offset, this.coordBack[i].y + offset);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+            
+            this.outerRadius = outerRadius;
+            this.initCoordBack();
+        },
+        
+        /**
+         * @protected
+         */
+        drawBackground: function() {
+            var control = this,
+                 ctx = this.ctx,
+                 w = this.getLineWidth();
+            
+            var img;
+            if (this.backgroundImage instanceof Image) {
+                img = backgroundImage;
+            } else {
+                img = new Image();
+                img.src = this.backgroundImage;
+            }
+            
+            function setImageBackground() {
+                var imgWidth = img.width,
+                     imgHeight = img.height,
+                     percentWidth = control.size / imgWidth,
+                     percentHeight = control.size / imgHeight,
+                     percent = percentHeight > percentWidth ? percentHeight : percentWidth,
+                     newWidth = imgWidth * percent,
+                     newHeight = imgHeight * percent,
+                     offsetWidth = (control.size - newWidth) / 2,
+                     offsetHeight = (control.size - newHeight) / 2;
+                
+                ctx.drawImage(img, 0, 0, img.width, img.height, offsetWidth, offsetHeight, newWidth, newHeight);
+                
+                if(control.clip) {
+                    control.makeClipMask.call(control);
+                }
+                
+                control.drawBack.call(control);
+                control.drawFront.call(control);
+            };
+            
+            if (img.complete) {
+                setImageBackground();
+            } else {
+                img.onload = setImageBackground;
+            }
         },
         
         /**
@@ -417,9 +522,8 @@
          */
         drawBack: function() {
             var ctx = this.ctx,
-            w = this.getLineWidth();
-            
-            ctx.save();
+                 w = this.getLineWidth();
+                
             ctx.beginPath();
             ctx.moveTo(this.coordBack[0].x, this.coordBack[0].y);
             for(var i = 0; i < this.coordBack.length; i++) {
@@ -428,6 +532,7 @@
             ctx.lineWidth = w;
             ctx.strokeStyle = this.lineBackFill;
             ctx.closePath();
+            
             ctx.stroke();
             ctx.restore();
         },
@@ -437,8 +542,8 @@
          */
         drawFront: function() {
             var ctx = this.ctx,
-            w = this.getLineWidth();
-            
+                 w = this.getLineWidth();
+                 
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(this.coordFront[0].x, this.coordFront[0].y);
@@ -475,9 +580,9 @@
     //=============================================
     // Init jQuery Pugin
     //=============================================
-    $.hexagonControl = {
+    $.hexagonProgress = {
         // Default options (you may override them)
-        defaults: HexagonControl.prototype
+        defaults: HexagonProgress.prototype
     };
     
     // ease-in-out-cubic
@@ -506,7 +611,7 @@
      *
      * @param CmdArgs - Some commands (like 'value') may require an argument
      */
-    $.fn.hexagonControl = function(CfgOrCmd, CmdArgs) {
+    $.fn.hexagonProgress = function(CfgOrCmd, CmdArgs) {
         var dataName = 'hexagon-control',
         instance = this.data(dataName);
         
@@ -552,7 +657,7 @@
                 
                 config = $.extend(initialConfig, config);
                 config.el = el;
-                instance = new HexagonControl(config);
+                instance = new HexagonProgress(config);
                 el.data(dataName, instance);
             }
         });
