@@ -1,15 +1,15 @@
 /*!
   Hexagon Progress jQuery Plugin
-  @name hexagon-progress.js
-  @version 1.1.0
+  @name jquery.hexagonprogress.js
   @description Draw animated hexagon progress bars
-  @category jQuery plugin
   @author Max Lawrence 
+  @version 1.1.0
+  @category jQuery plugin
   @copyright (c) 2015 Max Lawrence (http://www.avirtum.com)
   @license Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) license.
 */
 (function($) {
-    'use strict';
+    "use strict";
     
     function HexagonProgress(config) {
         this.init(config);
@@ -50,12 +50,12 @@
         lineWidth: null,
         
         /**
-         * Line cap ('butt', 'round' or 'square')
+         * Line cap ("butt" "round" or "square")
          * Read more: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D.lineCap
          * @public
          * @type {string}
          */
-        lineCap: 'round',
+        lineCap: "round",
         
         /**
          * On/off clipping mask. It works if background is not null.
@@ -67,7 +67,7 @@
         /**
          * Background. You may set it to:
          *   - image:
-         *     - { image: 'http://i.imgur.com/HmMu67L.jpg' }
+         *     - { image: "http://i.imgur.com/HmMu67L.jpg" }
          *     - { image: imageObject }
          * @public
          */
@@ -78,24 +78,24 @@
          * @public
          * @type {string}
          */
-        lineBackFill: 'rgba(0, 0, 0, .1)',
+        lineBackFill: "rgba(0, 0, 0, .1)",
         
         /**
          * Fill of the border. You may set it to:
          *   - solid color:
-         *     - { color: '#fb141d' }
-         *     - { color: 'rgba(255, 255, 255, .5)' }
+         *     - { color: "#fb141d" }
+         *     - { color: "rgba(255, 255, 255, .5)" }
          *   - linear gradient (left to right):
-         *     - { gradient: ['#fb141d', '#fb0c58'], gradientAngle: Math.PI / 4 }
-         *     - { gradient: ['red', 'green', 'blue'], gradientDirection: [x0, y0, x1, y1] }
+         *     - { gradient: ["#fb141d", "#fb0c58"], gradientAngle: Math.PI / 4 }
+         *     - { gradient: ["red", "green", "blue"], gradientDirection: [x0, y0, x1, y1] }
          *   - image:
-         *     - { image: 'http://i.imgur.com/HmMu67L.jpg' }
+         *     - { image: "http://i.imgur.com/HmMu67L.jpg" }
          *     - { image: imageObject }
-         *     - { color: 'lime', image: 'http://i.imgur.com/HmMu67L.jpg' } - color displayed until the image is loaded
+         *     - { color: "lime", image: "http://i.imgur.com/HmMu67L.jpg" } - color displayed until the image is loaded
          * @public
          */
         lineFrontFill: {
-            gradient: ['#fb141d', '#fb0c58']
+            gradient: ["#fb141d", "#fb0c58"]
         },
         
         /**
@@ -103,8 +103,8 @@
          * @public
          */
         animation: {
-            duration: 1200,
-            easing: 'hexagonEasing'
+            duration: 1800,
+            easing: "hexagonEasing"
         },
         
         /**
@@ -130,33 +130,32 @@
         el: null,
         
         /**
-         * Canvas element. Automatically generated and prepended to the {@link HexagonControl el}
+         * Canvas element. Automatically generated and prepended to the {@link HexagonProgress el}
          * @protected
          * @type {HTMLCanvasElement}
          */
         canvas: null,
         
         /**
-         * 2D-context of the {@link HexagonControl el canvas}
+         * 2D-context of the {@link HexagonProgress el canvas}
          * @protected
          * @type {CanvasRenderingContext2D}
          */
         ctx: null,
         
         /**
-         * Radius of the outer circle. Automatically calculated as {@link HexagonControl.size / 2}
+         * Radius of the outer circle. Automatically calculated as {@link HexagonProgress.size / 2}
          * @protected
          * @type {number}
          */
         outerRadius: 0.0,
         
         /**
-         * Fill of the line. Automatically calculated, depending on {@link HexagonControl.lineFrontFill} option
+         * Fill of the line. Automatically calculated, depending on {@link HexagonProgress.lineFrontFill} option
          * @protected
          * @type {string|CanvasGradient|CanvasPattern}
          */
         lineFill: null,
-        
         
         /**
          * Last rendered value
@@ -187,12 +186,12 @@
         edges: [],
         
         /**
-         * Init/re-init the widget
+         * Init/reinit the widget
          * @param {object}
          */
         init: function(config) {
             $.extend(this, config);
-            this.initControl();
+            this.initWidget();
             this.initFill();
             this.draw();
         },
@@ -200,10 +199,10 @@
         /**
          * @protected
          */
-        initControl: function() {
-            var canvas = this.canvas = this.canvas || $('<canvas>').prependTo(this.el)[0];
+        initWidget: function() {
+            var canvas = this.canvas = this.canvas || $("<canvas>").prependTo(this.el)[0];
             
-            if(this.size == 'parent') {
+            if(this.size == "parent") {
                 var h = $(canvas).parent().outerHeight(),
                     w = $(canvas).parent().outerWidth();
                 this.size = (h > w ? w : h);
@@ -211,12 +210,12 @@
             
             canvas.width = this.size;
             canvas.height = this.size;
-            this.ctx = canvas.getContext('2d');
+            this.ctx = canvas.getContext("2d");
             this.outerRadius = this.size / 2;
         },
         
         /**
-         * This method sets {@link HexagonControl.coordBack}
+         * This method sets {@link HexagonProgress.coordBack}
          * @protected
          */
         initCoordBack: function() {
@@ -254,7 +253,7 @@
         },
         
         /**
-         * This method sets {@link HexagonControl.coordFront}
+         * This method sets {@link HexagonProgress.coordFront}
          * @protected
          */
         initCoordFront: function(value) {
@@ -308,12 +307,12 @@
         },
         
         /**
-         * This method sets {@link HexagonControl.lineFill}
+         * This method sets {@link HexagonProgress.lineFill}
          * It could do this async (on image load)
          * @protected
          */
         initFill: function() {
-            var control = this,
+            var self = this,
             lineFrontFill = this.lineFrontFill,
             ctx = this.ctx,
             size = this.size;
@@ -369,12 +368,12 @@
                 }
                 
                 function setImageLineFill() {
-                    var bg = $('<canvas>')[0];
-                    bg.width = control.size;
-                    bg.height = control.size;
-                    bg.getContext('2d').drawImage(img, 0, 0, size, size);
-                    control.lineFill = control.ctx.createPattern(bg, 'no-repeat');
-                    control.drawFrame(control.lastValue);
+                    var bg = $("<canvas>")[0];
+                    bg.width = self.size;
+                    bg.height = self.size;
+                    bg.getContext("2d").drawImage(img, 0, 0, size, size);
+                    self.lineFill = self.ctx.createPattern(bg, "no-repeat");
+                    self.drawFrame(self.lastValue);
                 }
 
                 if (img.complete) {
@@ -407,7 +406,7 @@
 
             // stop previous animation before new "start" event is triggered
             canvas.stop(true, false);
-            el.trigger('hexagon-animation-start');
+            el.trigger("hexagon-animation-start");
             
             canvas
                 .css({ animationProgress: 0 })
@@ -415,13 +414,13 @@
                     step: function (animationProgress) {
                         var stepValue = $this.animationStartValue * (1 - animationProgress) + value * animationProgress;
                         $this.drawFrame(stepValue);
-                        el.trigger('hexagon-animation-progress', [animationProgress, stepValue]);
+                        el.trigger("hexagon-animation-progress", [animationProgress, stepValue]);
                     }
                 }))
                 .promise()
                 .always(function() {
                     // trigger on both successful & failure animation end
-                    el.trigger('hexagon-animation-end');
+                    el.trigger("hexagon-animation-end");
                 });
         },
         
@@ -457,8 +456,8 @@
                     
             ctx.save();
 
-            ctx.fillStyle = '#fff'; //color doesn't matter, but we want full opacity
-            ctx.globalCompositeOperation = 'destination-in';
+            ctx.fillStyle = "#fff"; //color doesn't matter, but we want full opacity
+            ctx.globalCompositeOperation = "destination-in";
             ctx.beginPath();
             ctx.moveTo(this.coordBack[0].x + offset, this.coordBack[0].y + offset);
             for(var i = 0; i < this.coordBack.length; i++) {
@@ -477,9 +476,9 @@
          * @protected
          */
         drawBackground: function() {
-            var control = this,
-                 ctx = this.ctx,
-                 w = this.getLineWidth();
+            var self = this,
+             ctx = this.ctx,
+             w = this.getLineWidth();
             
             var img;
             if (this.backgroundImage instanceof Image) {
@@ -492,22 +491,22 @@
             function setImageBackground() {
                 var imgWidth = img.width,
                      imgHeight = img.height,
-                     percentWidth = control.size / imgWidth,
-                     percentHeight = control.size / imgHeight,
+                     percentWidth = self.size / imgWidth,
+                     percentHeight = self.size / imgHeight,
                      percent = percentHeight > percentWidth ? percentHeight : percentWidth,
                      newWidth = imgWidth * percent,
                      newHeight = imgHeight * percent,
-                     offsetWidth = (control.size - newWidth) / 2,
-                     offsetHeight = (control.size - newHeight) / 2;
+                     offsetWidth = (self.size - newWidth) / 2,
+                     offsetHeight = (self.size - newHeight) / 2;
                 
                 ctx.drawImage(img, 0, 0, img.width, img.height, offsetWidth, offsetHeight, newWidth, newHeight);
                 
-                if(control.clip) {
-                    control.makeClipMask.call(control);
+                if(self.clip) {
+                    self.makeClipMask.call(self);
                 }
                 
-                control.drawBack.call(control);
-                control.drawFront.call(control);
+                self.drawBack.call(self);
+                self.drawFront.call(self);
             };
             
             if (img.complete) {
@@ -578,7 +577,7 @@
     };
     
     //=============================================
-    // Init jQuery Pugin
+    // Init jQuery Plugin
     //=============================================
     $.hexagonProgress = {
         // Default options (you may override them)
@@ -606,28 +605,28 @@
      *     Example: { value: 0.75, size: 50, animation: false };
      *     you may set any public property (see above);
      *     `animation` may be set to false;
-     *     you may use .hexagonProgress('canvas') to get the canvas
-     *     you may use .hexagonProgress('value', newValue) to dynamically update the value
+     *     you may use .hexagonProgress("canvas") to get the canvas
+     *     you may use .hexagonProgress("value", newValue) to dynamically update the value
      *
-     * @param CmdArgs - Some commands (like 'value') may require an argument
+     * @param CmdArgs - some commands (like "value") may require an argument
      */
     $.fn.hexagonProgress = function(CfgOrCmd, CmdArgs) {
-        var dataName = 'hexagon-control',
+        var dataName = "hexagon-progress",
         instance = this.data(dataName);
         
-        if (CfgOrCmd == 'canvas') {
+        if (CfgOrCmd == "canvas") {
             if (!instance) {
-                throw Error('Calling "canvas" method on not initialized instance is forbidden');
+                throw Error("Calling 'canvas' method on not initialized instance is forbidden");
             }
             return instance.canvas;
         }
 
-        if (CfgOrCmd == 'value') {
+        if (CfgOrCmd == "value") {
             if (!instance) {
-                throw Error('Calling "value" method on not initialized instance is forbidden');
+                throw Error("Calling 'value' method on not initialized instance is forbidden");
             }
             
-            if (typeof CmdArgs == 'undefined') {
+            if (typeof CmdArgs == "undefined") {
                 return instance.getValue();
             } else {
                 var newValue = arguments[1];
@@ -647,11 +646,11 @@
             } else {
                 var initialConfig = $.extend({}, el.data());
                 
-                if (typeof initialConfig.lineFrontFill == 'string') {
+                if (typeof initialConfig.lineFrontFill == "string") {
                     initialConfig.lineFrontFill = JSON.parse(initialConfig.lineFrontFill);
                 }
                 
-                if (typeof initialConfig.animation == 'string') {
+                if (typeof initialConfig.animation == "string") {
                     initialConfig.animation = JSON.parse(initialConfig.animation);
                 }
                 
