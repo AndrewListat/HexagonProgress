@@ -312,6 +312,15 @@
          * @protected
          */
         initFill: function() {
+            function setImageLineFill() {
+                var bg = $("<canvas>")[0];
+                bg.width = self.size;
+                bg.height = self.size;
+                bg.getContext("2d").drawImage(img, 0, 0, size, size);
+                self.lineFill = self.ctx.createPattern(bg, "no-repeat");
+                self.drawFrame(self.lastValue);
+            }
+                
             var self = this,
             lineFrontFill = this.lineFrontFill,
             ctx = this.ctx,
@@ -365,15 +374,6 @@
                 } else {
                     img = new Image();
                     img.src = lineFrontFill.image;
-                }
-                
-                function setImageLineFill() {
-                    var bg = $("<canvas>")[0];
-                    bg.width = self.size;
-                    bg.height = self.size;
-                    bg.getContext("2d").drawImage(img, 0, 0, size, size);
-                    self.lineFill = self.ctx.createPattern(bg, "no-repeat");
-                    self.drawFrame(self.lastValue);
                 }
 
                 if (img.complete) {
@@ -476,18 +476,6 @@
          * @protected
          */
         drawBackground: function() {
-            var self = this,
-             ctx = this.ctx,
-             w = this.getLineWidth();
-            
-            var img;
-            if (this.backgroundImage instanceof Image) {
-                img = backgroundImage;
-            } else {
-                img = new Image();
-                img.src = this.backgroundImage;
-            }
-            
             function setImageBackground() {
                 var imgWidth = img.width,
                      imgHeight = img.height,
@@ -508,6 +496,18 @@
                 self.drawBack.call(self);
                 self.drawFront.call(self);
             };
+            
+            var self = this,
+             ctx = this.ctx,
+             w = this.getLineWidth();
+            
+            var img;
+            if (this.backgroundImage instanceof Image) {
+                img = backgroundImage;
+            } else {
+                img = new Image();
+                img.src = this.backgroundImage;
+            }
             
             if (img.complete) {
                 setImageBackground();
@@ -540,6 +540,10 @@
          * @protected
          */
         drawFront: function() {
+            if(this.value == 0) {
+                return;
+            }
+            
             var ctx = this.ctx,
                  w = this.getLineWidth();
                  
