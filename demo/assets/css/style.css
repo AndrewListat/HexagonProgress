@@ -1,0 +1,30 @@
+body {
+    background:#AAA;
+    font:Georgia, Serif;
+    color:#fff;
+    text-shadow: -1px 1px 1px #000;
+}
+h1, h2 {
+    text-align:center;
+    margin:10px;
+}
+h1 {
+    font-size:50px;
+}
+h2 {
+    font-size:30px;
+}
+h3 {
+    font-size:18px;
+    margin:3px 5px;
+    color:#333;
+}
+#container {
+    margin:auto;
+}
+.hexagon {
+    display:inline-block;
+    width:128px;
+    height:128px;
+    margin:5px;
+}

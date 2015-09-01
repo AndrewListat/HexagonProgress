@@ -3,7 +3,7 @@
   @name jquery.hexagonprogress.js
   @description Draw animated hexagon progress bars
   @author Max Lawrence 
-  @version 1.1.0
+  @version 1.2.0
   @category jQuery plugin
   @copyright (c) 2015 Max Lawrence (http://www.avirtum.com)
   @license Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) license.
@@ -26,7 +26,7 @@
          * @public
          * @type {number|string}
          */
-        size: 100.0,
+        size: "parent",
         
         /**
          * Range. It should be [0.0; 1.0]
@@ -66,19 +66,26 @@
         
         /**
          * Background. You may set it to:
+         *   - solid color:
+         *     - { color: "#fb141d" }
+         *     - { color: "rgba(255, 255, 255, .5)" }
          *   - image:
          *     - { image: "http://i.imgur.com/HmMu67L.jpg" }
          *     - { image: imageObject }
          * @public
          */
-        backgroundImage: null,
+        background: null,
         
         /**
-         * Color of the back border. Only a color.
+         * Color of the back border. You may set it to:
+         *   - solid color:
+         *     - { color: "#fb141d" }
+         *     - { color: "rgba(255, 255, 255, .5)" }
          * @public
-         * @type {string}
          */
-        lineBackFill: "rgba(0, 0, 0, .1)",
+        lineBackFill: {
+            color: "rgba(0, 0, 0, .1)"
+        },
         
         /**
          * Fill of the border. You may set it to:
@@ -312,40 +319,38 @@
          * @protected
          */
         initFill: function() {
+            var self = this,
+            ctx = this.ctx;
+            
             function setImageLineFill() {
                 var bg = $("<canvas>")[0];
                 bg.width = self.size;
                 bg.height = self.size;
-                bg.getContext("2d").drawImage(img, 0, 0, size, size);
+                bg.getContext("2d").drawImage(img, 0, 0, self.size, self.size);
                 self.lineFill = self.ctx.createPattern(bg, "no-repeat");
                 self.drawFrame(self.lastValue);
             }
-                
-            var self = this,
-            lineFrontFill = this.lineFrontFill,
-            ctx = this.ctx,
-            size = this.size;
-
-            if (!lineFrontFill) {
+            
+            if (!this.lineFrontFill) {
                 throw Error("The lineFrontFill is not specified!");
             }
 
-            if (lineFrontFill.color) {
-                this.lineFill = lineFrontFill.color;
+            if (this.lineFrontFill.color) {
+                this.lineFill = this.lineFrontFill.color;
             }
 
-            if (lineFrontFill.gradient) {
-                var gr = lineFrontFill.gradient;
+            if (this.lineFrontFill.gradient) {
+                var gr = this.lineFrontFill.gradient;
 
                 if (gr.length == 1) {
                     this.lineFill = gr[0];
                 } else if (gr.length > 1) {
-                    var ga = lineFrontFill.gradientAngle || 0, // gradient direction angle; 0 by default
-                    gd = lineFrontFill.gradientDirection || [
-                        size / 2 * (1 - Math.cos(ga)), // x0
-                        size / 2 * (1 + Math.sin(ga)), // y0
-                        size / 2 * (1 + Math.cos(ga)), // x1
-                        size / 2 * (1 - Math.sin(ga))  // y1
+                    var ga = this.lineFrontFill.gradientAngle || 0, // gradient direction angle; 0 by default
+                    gd = this.lineFrontFill.gradientDirection || [
+                        self.size / 2 * (1 - Math.cos(ga)), // x0
+                        self.size / 2 * (1 + Math.sin(ga)), // y0
+                        self.size / 2 * (1 + Math.cos(ga)), // x1
+                        self.size / 2 * (1 - Math.sin(ga))  // y1
                     ];
 
                     var lg = ctx.createLinearGradient.apply(ctx, gd);
@@ -366,14 +371,14 @@
                 }
             }
 
-            if (lineFrontFill.image) {
+            if (this.lineFrontFill.image) {
                 var img;
 
-                if (lineFrontFill.image instanceof Image) {
-                    img = lineFrontFill.image;
+                if (this.lineFrontFill.image instanceof Image) {
+                    img = this.lineFrontFill.image;
                 } else {
                     img = new Image();
-                    img.src = lineFrontFill.image;
+                    img.src = this.lineFrontFill.image;
                 }
 
                 if (img.complete) {
@@ -400,7 +405,7 @@
          * @param {number}
          */
         drawAnimated: function(value) {
-            var $this = this,
+            var self = this,
             el = this.el,
             canvas = $(this.canvas);
 
@@ -412,8 +417,8 @@
                 .css({ animationProgress: 0 })
                 .animate({ animationProgress: 1 }, $.extend({}, this.animation, {
                     step: function (animationProgress) {
-                        var stepValue = $this.animationStartValue * (1 - animationProgress) + value * animationProgress;
-                        $this.drawFrame(stepValue);
+                        var stepValue = self.animationStartValue * (1 - animationProgress) + value * animationProgress;
+                        self.drawFrame(stepValue);
                         el.trigger("hexagon-animation-progress", [animationProgress, stepValue]);
                     }
                 }))
@@ -434,39 +439,55 @@
             this.initCoordBack();
             this.initCoordFront(value);
             
-            if(this.backgroundImage) {
-                this.drawBackground();
+            if(this.background) {
+                this.drawWithBackground();
             } else {
                 this.drawBack();
                 this.drawFront();
             }
         },
         
-        /**
+        /** 
+         * @protected
+         */
+         checkSupportCompositeMode: function (ctx, mode) {
+             var oldMode = ctx.globalCompositeOperation,
+             result = false;
+            
+            ctx.globalCompositeOperation = mode;
+            if(ctx.globalCompositeOperation == mode) {
+                result = true;
+            }
+            ctx.globalCompositeOperation = oldMode;
+            return result;
+        },
+
+        /** You should save canvas context before call this function
          * @protected
          */
         makeClipMask: function() {
             var ctx = this.ctx,
-                 w = this.getLineWidth(),
-                 outerRadius = this.outerRadius,
-                 offset = w/2;
+            w = this.getLineWidth(),
+            outerRadius = this.outerRadius,
+            offset = w/2;
                  
             this.outerRadius -= offset;
             this.initCoordBack();
-                    
-            ctx.save();
-
-            ctx.fillStyle = "#fff"; //color doesn't matter, but we want full opacity
-            ctx.globalCompositeOperation = "destination-in";
+            
             ctx.beginPath();
             ctx.moveTo(this.coordBack[0].x + offset, this.coordBack[0].y + offset);
             for(var i = 0; i < this.coordBack.length; i++) {
                 ctx.lineTo(this.coordBack[i].x + offset, this.coordBack[i].y + offset);
             }
             ctx.closePath();
-            ctx.fill();
-            
-            ctx.restore();
+
+            if(this.checkSupportCompositeMode(ctx, "destination-in")) {
+                ctx.globalCompositeOperation = "destination-in";
+                ctx.fillStyle = "#fff"; //color doesn't matter, but we want full opacity
+                ctx.fill();
+            } else {
+                ctx.clip();
+            }
             
             this.outerRadius = outerRadius;
             this.initCoordBack();
@@ -475,7 +496,11 @@
         /**
          * @protected
          */
-        drawBackground: function() {
+        drawWithBackground: function() {
+            var self = this,
+             ctx = this.ctx,
+             w = this.getLineWidth();
+             
             function setImageBackground() {
                 var imgWidth = img.width,
                      imgHeight = img.height,
@@ -487,32 +512,65 @@
                      offsetWidth = (self.size - newWidth) / 2,
                      offsetHeight = (self.size - newHeight) / 2;
                 
-                ctx.drawImage(img, 0, 0, img.width, img.height, offsetWidth, offsetHeight, newWidth, newHeight);
-                
+                ctx.save();
                 if(self.clip) {
-                    self.makeClipMask.call(self);
+                    if(self.checkSupportCompositeMode(ctx, "destination-in")) {
+                        ctx.drawImage(img, 0, 0, img.width, img.height, offsetWidth, offsetHeight, newWidth, newHeight);
+                        self.makeClipMask.call(self);
+                    } else {
+                        self.makeClipMask.call(self);
+                        ctx.drawImage(img, 0, 0, img.width, img.height, offsetWidth, offsetHeight, newWidth, newHeight);
+                    }
+                } else {
+                    ctx.drawImage(img, 0, 0, img.width, img.height, offsetWidth, offsetHeight, newWidth, newHeight);
                 }
+                ctx.restore();
                 
                 self.drawBack.call(self);
                 self.drawFront.call(self);
             };
             
-            var self = this,
-             ctx = this.ctx,
-             w = this.getLineWidth();
-            
-            var img;
-            if (this.backgroundImage instanceof Image) {
-                img = backgroundImage;
-            } else {
-                img = new Image();
-                img.src = this.backgroundImage;
+            function setBackgroundColor() {
+                ctx.beginPath();
+                ctx.rect(0, 0, self.size, self.size);
+                ctx.fillStyle = self.background.color;
+                ctx.fill();
             }
             
-            if (img.complete) {
-                setImageBackground();
-            } else {
-                img.onload = setImageBackground;
+            if (this.background.color) {
+                ctx.save();
+                if(self.clip) {
+                    if(self.checkSupportCompositeMode(ctx, "destination-in")) {
+                        setBackgroundColor();
+                        self.makeClipMask.call(self);
+                    } else {
+                        self.makeClipMask.call(self);
+                        setBackgroundColor();
+                    }
+                } else {
+                    setBackgroundColor();
+                }
+                ctx.restore();
+                
+                self.drawBack.call(self);
+                self.drawFront.call(self);
+            }
+            
+            if (this.background.image) {
+                var img;
+
+                if (this.background.image instanceof Image) {
+                    img = this.background.image;
+                } else {
+                    img = new Image();
+                    img.src = this.background.image;
+                }
+                
+                if (img.complete) {
+                    setImageBackground();
+                } else {
+                    img.onload = setImageBackground;
+                }
             }
         },
         
@@ -521,15 +579,16 @@
          */
         drawBack: function() {
             var ctx = this.ctx,
-                 w = this.getLineWidth();
+            w = this.getLineWidth();
                 
+            ctx.save();
             ctx.beginPath();
             ctx.moveTo(this.coordBack[0].x, this.coordBack[0].y);
             for(var i = 0; i < this.coordBack.length; i++) {
                 ctx.lineTo(this.coordBack[i].x, this.coordBack[i].y);
             }
             ctx.lineWidth = w;
-            ctx.strokeStyle = this.lineBackFill;
+            ctx.strokeStyle = this.lineBackFill.color;
             ctx.closePath();
             
             ctx.stroke();
@@ -545,7 +604,7 @@
             }
             
             var ctx = this.ctx,
-                 w = this.getLineWidth();
+            w = this.getLineWidth();
                  
             ctx.save();
             ctx.beginPath();
@@ -650,8 +709,16 @@
             } else {
                 var initialConfig = $.extend({}, el.data());
                 
+                if (typeof initialConfig.lineBackFill == "string") {
+                    initialConfig.lineBackFill = JSON.parse(initialConfig.lineBackFill);
+                }
+                
                 if (typeof initialConfig.lineFrontFill == "string") {
                     initialConfig.lineFrontFill = JSON.parse(initialConfig.lineFrontFill);
+                }
+                
+                if (typeof initialConfig.background == "string") {
+                    initialConfig.background = JSON.parse(initialConfig.background);
                 }
                 
                 if (typeof initialConfig.animation == "string") {
