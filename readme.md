@@ -2,10 +2,10 @@
 
 ==========
 
-* 1. [About](#about)
-* 2. [Use](#how-to-use)
-* 3. [Demo](#demo)
-* 4. [License](#license)
+* [About](#about)
+* [Use](#how-to-use)
+* [Demo](#demo)
+* [License](#license)
 
 ### ABOUT
 
